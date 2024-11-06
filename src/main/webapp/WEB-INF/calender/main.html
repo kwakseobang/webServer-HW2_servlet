@@ -1,0 +1,256 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>캘린더</title>
+  <link rel="stylesheet" href="/calender.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    button {
+      /* button 요소에 기본적으로 설정되는 스타일 속성 초기화 */
+      border: none;
+      outline: none;
+      background-color: transparent;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .wrapper {
+      width: 450px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 25px;
+    }
+
+    .wrapper .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .wrapper .nav .current-date {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .wrapper .nav button {
+      width: 38px;
+      height: 38px;
+      font-size: 30px;
+      color: #878787;
+    }
+
+    .calendar ul {
+      display: flex;
+      list-style: none;
+      flex-wrap: wrap;
+      text-align: center;
+    }
+    .calendar .weeks li {
+      font-weight: 500;
+    }
+    .calendar .days {
+      margin-bottom: 20px;
+    }
+    .calendar ul li {
+      /*#8*/
+      width: calc(100% / 7);
+      /*#9*/
+      position: relative;
+    }
+    .calendar .days li {
+      /*#10*/
+      z-index: 1;
+      margin-top: 30px;
+      cursor: pointer;
+    }
+
+    /*#11*/
+    .days li.inactive {
+      color: #aaa;
+    }
+    .days li.active {
+      color: #fff;
+    }
+    .calendar .days li::before {
+      position: absolute;
+      content: '';
+      height: 40px;
+      width: 40px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      z-index: -1;
+    }
+    .days li:hover::before {
+      background: #f2f2f2;
+    }
+    .days li.active::before {
+      background: #008aff;
+    }
+
+    .calendar-content {
+      font-size:9px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .buttons form {
+      margin: 0 5px;
+    }
+
+    .buttons button {
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #878787;
+      border-radius: 10px ;
+    }
+
+    .content-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .content-link:hover {
+      color: inherit;
+    }
+
+    /* 수정 가능할 때 다른 색으로 표시 */
+    .editable-day {
+      color: #008aff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="nav">
+      <button id="prev" class="material-icons"><</button>
+      <div class="current-date"></div>
+      <button id="next" class="material-icons">></button>
+    </div>
+  </header>
+  <div class="calendar">
+    <ul class="weeks">
+      <li>일</li>
+      <li>월</li>
+      <li>화</li>
+      <li>수</li>
+      <li>목</li>
+      <li>금</li>
+      <li>토</li>
+    </ul>
+    <ul class="days">
+      <!-- 날짜들이 여기에 표시됩니다 -->
+    </ul>
+  </div>
+  <div class="buttons">
+    <form action="/register" method="get">
+      <button>캘린더 작성</button>
+    </form>
+    <form action="/user/logout" method="post">
+      <button>LOGOUT</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // JSP에서 서버 데이터를 JavaScript로 전달
+  const calenderData = ${calenderList}; // JSP에서 calenderList를 전달
+  const userId = ${UserInfo.id}; // JSP에서 UserInfo.id를 전달
+
+  const currentDate = document.querySelector('.current-date');
+  let date = new Date(),
+          currYear = date.getFullYear(),
+          currMonth = date.getMonth();
+
+  const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+  currentDate.innerHTML = `${months[currMonth]} ${currYear}`;
+  const daysTag = document.querySelector('.days');
+  const prevNextIcons = document.querySelectorAll('.nav button');
+
+  const renderCalendar = () => {
+    let firstDayofMonth = new Date(currYear, currMonth, 1).getDay();
+    let lastDateofMonth = new Date(currYear, currMonth + 1, 0).getDate();
+    let lastDateofLastMonth = new Date(currYear, currMonth, 0).getDate();
+    let liTag = "";
+
+    // 이전 달 날짜 표시
+    for (let i = firstDayofMonth; i > 0; i--) {
+      liTag += `<li class="inactive">${lastDateofLastMonth - i + 1}</li>`;
+    }
+
+    // 현재 달 날짜 표시
+    for (let i = 1; i <= lastDateofMonth; i++) {
+      const todayEvents = calenderData.filter(item => {
+        const eventDate = new Date(item.date);
+        return eventDate.getFullYear() === currYear &&
+                eventDate.getMonth() === currMonth &&
+                eventDate.getDate() === i;
+      });
+      if (todayEvents.length > 0) {
+        todayEvents.forEach(event => {
+          const isEditable = userId === event.author.id;
+          liTag += `<li class="${isEditable ? 'editable-day' : ''}">${i}
+                   <div class="calendar-content">
+    ${event.author.id} :
+    <c:choose>
+        <c:when test="${isEditable}">
+            <a href="/modify/${event.id}" class="content-link">${event.content}</a>
+        </c:when>
+        <c:otherwise>
+            ${event.content}
+        </c:otherwise>
+    </c:choose>
+</div>
+                  </li>`;
+        });
+      } else {
+        liTag += `<li>${i} </li>`;
+      }
+    }
+
+    currentDate.innerHTML = `${months[currMonth]} ${currYear}`;
+    daysTag.innerHTML = liTag;
+  };
+
+  renderCalendar();
+
+  prevNextIcons.forEach((icon) => {
+    icon.addEventListener('click', () => {
+      currMonth = icon.id === 'prev' ? currMonth - 1 : currMonth + 1;
+      if (currMonth < 0) {
+        currMonth = 11;
+        currYear--;
+      } else if (currMonth > 11) {
+        currMonth = 0;
+        currYear++;
+      }
+      date = new Date(currYear, currMonth);
+      renderCalendar();
+    });
+  });
+</script>
+</body>
+</html>

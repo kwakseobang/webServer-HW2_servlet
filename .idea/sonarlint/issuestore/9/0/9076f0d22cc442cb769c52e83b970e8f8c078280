@@ -1,0 +1,4 @@
+
+a	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(Ü¦œU8¢ªç¯2
+Ë
+java:S6548"®An Enum-based Singleton implementation was detected. Make sure the use of the Singleton pattern is required and an Enum-based implementation is the right one for the context.(ÉÚ¥~8¦ªç¯2
